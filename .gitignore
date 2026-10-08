@@ -21,3 +21,6 @@ Packages/
 
 # Generated test modules
 /tests/FixtureData.luau
+
+# Private local schema fixtures
+/tests/fixtures/landscape/

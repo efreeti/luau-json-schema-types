@@ -3,7 +3,11 @@ local Schema = require("../src")
 local fixtures = require("./FixtureData")
 local examples = require("./types-positive")
 assert(next(Schema :: { [string]: unknown }) == nil, "The package exports types only")
-assert(#fixtures == 34)
+local publicCases = 0
+for _, fixture in fixtures do
+    if string.sub(fixture.name, 1, 6) == "cases/" then publicCases += 1 end
+end
+assert(publicCases == 19)
 for _, fixture in fixtures do
     assert(type(fixture.schema) == "table" or type(fixture.schema) == "boolean", fixture.name)
 end
@@ -28,4 +32,4 @@ assert(type(default) == "table")
 assert(default["enabled"] == true)
 assert(default["retries"] == 3)
 assert(default["@type"] == nil)
-print("PASS 34 schema fixtures (15 landscape + 19 cases) and native construction checks")
+print("PASS " .. tostring(#fixtures) .. " schema fixtures and native construction checks")

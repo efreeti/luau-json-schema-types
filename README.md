@@ -106,7 +106,7 @@ python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
 python3 scripts/check-package.py .tools/wally
 ```
 
-Tests statically check 15 landscape tool schemas and all 19 additional schemas in
+Tests statically check all 19 synthetic schemas in
 `tests/fixtures/cases/`, translated into native Luau values, plus construction examples
 and six deliberately invalid declarations. Boolean schemas are included. JSON null
 values become `nil` in these construction fixtures; nil fields and array entries
@@ -114,7 +114,9 @@ cannot preserve the source JSON. Empty objects and arrays both become `{}`. Thes
 cases check type compatibility, not lossless serialization.
 Standalone runtime checks confirm the native table representation and empty module
 exports. They do not simulate HttpService or claim Roblox JSON round-trip testing.
-The landscape JSON fixtures are committed snapshots; no Java repository is required.
+Private landscape schemas may be kept locally in the ignored
+`tests/fixtures/landscape/` directory. Add `--include-landscape` to the check command
+to include them in a local run. Public CI uses only the synthetic cases.
 The check script generates `tests/FixtureData.luau` automatically before checking
 the types. That generated module is ignored by Git and does not need to be committed.
 

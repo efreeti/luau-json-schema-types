@@ -33,4 +33,6 @@ jobs:
           WALLY_AUTH_TOKEN: ${{ secrets.WALLY_AUTH_TOKEN }}
         run: |
           test -n "$WALLY_AUTH_TOKEN" || { echo 'Missing WALLY_AUTH_TOKEN secret' >&2; exit 1; }
-          .tools/wally publish --token "$WALLY_AUTH_TOKEN"
+          .tools/wally login --token "$WALLY_AUTH_TOKEN"
+          .tools/wally publish | tee "$RUNNER_TEMP/wally-publish.log"
+          grep -Fq "Package published successfully!" "$RUNNER_TEMP/wally-publish.log"
