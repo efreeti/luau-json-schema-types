@@ -6,6 +6,7 @@ parser.add_argument('--luau', default='luau')
 parser.add_argument('--analyzer', default='luau-analyze')
 parser.add_argument("--include-landscape", action="store_true", help="Also check ignored local landscape fixtures")
 args = parser.parse_args()
+subprocess.run([sys.executable, str(root / "tests/test_version.py")], cwd=root, check=True)
 generate = [sys.executable, str(root / "scripts/generate-fixtures.py")]
 if args.include_landscape:
     generate.append("--include-landscape")

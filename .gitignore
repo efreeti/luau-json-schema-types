@@ -24,3 +24,7 @@ Packages/
 
 # Private local schema fixtures
 /tests/fixtures/landscape/
+
+# Python tooling caches
+__pycache__/
+*.pyc
