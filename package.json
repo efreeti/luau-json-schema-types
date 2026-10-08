@@ -1,0 +1,20 @@
+{
+  "name": "@efreeti/luau-json-schema-types",
+  "version": "0.1.0",
+  "description": "Typed Luau JSON Schema 2020-12 models",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/efreeti/luau-json-schema-types.git"
+  },
+  "files": [
+    "src",
+    "default.project.json",
+    "wally.toml",
+    "NOTICE",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

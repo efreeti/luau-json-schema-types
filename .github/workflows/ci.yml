@@ -1,0 +1,17 @@
+name: Verify
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: bash scripts/install-tools.sh
+      - name: Check schema types and native tables
+        run: python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
+      - name: Check Wally archive
+        run: python3 scripts/check-package.py .tools/wally

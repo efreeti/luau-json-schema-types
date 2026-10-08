@@ -1,0 +1,12 @@
+{
+  "x-extension": {
+    "a": [
+      null,
+      false
+    ]
+  },
+  "@type": "custom-keyword",
+  "extensions": {
+    "data": true
+  }
+}

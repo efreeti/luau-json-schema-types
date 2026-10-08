@@ -12,3 +12,12 @@ profile.svg
 
 # Time trace
 trace.json
+
+# Local tooling and build outputs
+.tools/
+build/
+Packages/
+*.tgz
+
+# Generated test modules
+/tests/FixtureData.luau

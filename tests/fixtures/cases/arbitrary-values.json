@@ -1,0 +1,17 @@
+{
+  "const": {
+    "@type": "user-data",
+    "values": [
+      null,
+      {},
+      [],
+      true,
+      0.125,
+      "text"
+    ]
+  },
+  "examples": [
+    [],
+    {}
+  ]
+}

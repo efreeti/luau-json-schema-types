@@ -1,0 +1,19 @@
+{
+  "dependentSchemas": {
+    "a": false
+  },
+  "dependentRequired": {
+    "a": [
+      "b"
+    ]
+  },
+  "propertyNames": {
+    "pattern": "^[a-z]+$"
+  },
+  "patternProperties": {
+    "^x": true
+  },
+  "unevaluatedProperties": false,
+  "minProperties": 0,
+  "maxProperties": 5
+}

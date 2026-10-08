@@ -1,0 +1,36 @@
+name: Publish to Wally
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: wally-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check tag matches manifest
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PYTHON'
+          import os, pathlib, tomllib
+          version = tomllib.loads(pathlib.Path('wally.toml').read_text())['package']['version']
+          assert os.environ['RELEASE_TAG'] == 'v' + version, 'Tag must match wally.toml version'
+          PYTHON
+      - run: bash scripts/install-tools.sh
+      - run: python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
+      - run: python3 scripts/check-package.py .tools/wally
+      - name: Publish verified package
+        env:
+          WALLY_AUTH_TOKEN: ${{ secrets.WALLY_AUTH_TOKEN }}
+        run: |
+          test -n "$WALLY_AUTH_TOKEN" || { echo 'Missing WALLY_AUTH_TOKEN secret' >&2; exit 1; }
+          .tools/wally publish --token "$WALLY_AUTH_TOKEN"
