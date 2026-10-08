@@ -1,6 +1,6 @@
 [package]
 name = "efreeti/json-schema-types"
-version = "0.1.0"
+version = "1.0.0"
 description = "Typed Luau JSON Schema 2020-12 models"
 authors = ["Efreeti"]
 license = "Apache-2.0"

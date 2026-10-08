@@ -6,7 +6,7 @@ Schemas use ordinary Luau tables and values suitable for Roblox's `HttpService:J
 The package contains type declarations only. Requiring it returns an empty table;
 its exported type aliases provide static checks when constructing schemas.
 
-Wally package: **efreeti/json-schema-types**. Initial version: **0.1.0**.
+Wally package: **efreeti/json-schema-types**. Initial version: **1.0.0**.
 The package has not been published yet.
 
 ## Install with Wally
@@ -15,7 +15,7 @@ Add this dependency to your game's `wally.toml` after the first release:
 
 ```toml
 [dependencies]
-JsonSchemaTypes = "efreeti/json-schema-types@0.1.0"
+JsonSchemaTypes = "efreeti/json-schema-types@1.0.0"
 ```
 
 Run `wally install`. Mount `Packages/` in your Rojo project as usual. Wally's
