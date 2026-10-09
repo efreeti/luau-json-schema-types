@@ -1,12 +1,11 @@
-"""Validate release inputs and update the package manifests together."""
+"""Validate release inputs and update npm package and lockfile versions."""
 import argparse
 import json
 from pathlib import Path
 import re
-import tomllib
 
 root = Path(__file__).resolve().parents[1]
-# Wally and npm both use SemVer; a Maven-style development version can be
+# npm uses SemVer; a Maven-style development version can be
 # expressed as a prerelease, e.g. 1.0.1-dev.0 or 1.0.1-SNAPSHOT.
 number = r'(?:0|[1-9][0-9]*)'
 identifier = r'(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'
@@ -21,14 +20,10 @@ def parse_version(value):
     return tuple(int(match[i]) for i in (1, 2, 3)), match[4]
 
 def manifests():
-    wally_path = root / 'wally.toml'
-    npm_path = root / 'package.json'
-    wally = wally_path.read_text()
-    npm = json.loads(npm_path.read_text())
-    current = tomllib.loads(wally)['package']['version']
-    if npm['version'] != current:
-        raise ValueError('wally.toml and package.json must have the same version')
-    return wally_path, npm_path, wally, npm
+    path = root / 'package.json'
+    npm = json.loads(path.read_text())
+    parse_version(npm['version'])
+    return path, npm
 
 def validate(release, next_version):
     release_core, prerelease = parse_version(release)
@@ -41,27 +36,19 @@ def validate(release, next_version):
 
 def set_version(value, update_readme=False):
     parse_version(value)
-    wally_path, npm_path, wally, npm = manifests()
-    # Edit only the package section; dependency versions remain untouched.
-    start = re.search(r'^\[package\]\s*$', wally, re.MULTILINE)
-    if start is None:
-        raise ValueError('Missing Wally package section')
-    rest = wally[start.end():]
-    following = re.search(r'^\[', rest, re.MULTILINE)
-    end = start.end() + following.start() if following else len(wally)
-    section, count = re.subn(r'^(version\s*=\s*)"[^"]+"', lambda m: m[1] + json.dumps(value),
-                            wally[start.end():end], flags=re.MULTILINE)
-    if count != 1:
-        raise ValueError('Expected one version in the Wally package section')
-    updated = wally[:start.end()] + section + wally[end:]
-    assert tomllib.loads(updated)['package']['version'] == value
+    path, npm = manifests()
     npm['version'] = value
-    wally_path.write_text(updated)
-    npm_path.write_text(json.dumps(npm, indent=2) + '\n')
+    path.write_text(json.dumps(npm, indent=2) + '\n')
+    lock_path = root / 'package-lock.json'
+    if lock_path.exists():
+        lock = json.loads(lock_path.read_text())
+        lock['version'] = value
+        lock['packages']['']['version'] = value
+        lock_path.write_text(json.dumps(lock, indent=2) + '\n')
     if update_readme:
         path = root / 'README.md'
-        text = re.sub(r'efreeti/json-schema-types@[^"\s]+',
-                      lambda _: 'efreeti/json-schema-types@' + value, path.read_text())
+        text = re.sub(r'@efreeti/luau-json-schema-types@[^"\s]+',
+                      lambda _: '@efreeti/luau-json-schema-types@' + value, path.read_text())
         path.write_text(text)
 
 if __name__ == '__main__':

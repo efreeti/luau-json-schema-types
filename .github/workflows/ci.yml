@@ -7,11 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Install Rust for the pinned npmluau fork
+        run: rustup toolchain install 1.94.0 --profile minimal --target wasm32-unknown-unknown
+      - name: Install npm dependencies
+        env:
+          RUSTUP_TOOLCHAIN: '1.94.0'
+        run: npm ci
       - run: bash scripts/install-tools.sh
-      - name: Check schema types and native tables
-        run: python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
-      - name: Check Wally archive
-        run: python3 scripts/check-package.py .tools/wally
+      - run: npm run check
+      - run: npm run check:package

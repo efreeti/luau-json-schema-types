@@ -9,12 +9,31 @@
   },
   "files": [
     "src",
-    "default.project.json",
-    "wally.toml",
-    "NOTICE",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "main": "src/init.luau",
+  "keywords": [
+    "luau",
+    "json-schema",
+    "roblox"
+  ],
+  "devDependencies": {
+    "npmluau": "git+https://github.com/efreeti/npmluau.git#6f8c35d86ed4dd0e22cd76b4d515bc19aa8f1164"
+  },
+  "scripts": {
+    "prepare": "npmluau --keep-luaurc --keep-rojo-configs",
+    "build": "python3 scripts/build-package.py",
+    "check": "python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze",
+    "check:package": "python3 scripts/check-package.py --luau .tools/luau --analyzer .tools/luau-analyze"
+  },
+  "luau": {
+    "build": {
+      "source": "src",
+      "output": "build/package"
+    }
   }
 }

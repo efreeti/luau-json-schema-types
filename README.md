@@ -6,33 +6,38 @@ Schemas use ordinary Luau tables and values suitable for Roblox's `HttpService:J
 The package contains type declarations only. Requiring it returns an empty table;
 its exported type aliases provide static checks when constructing schemas.
 
-Wally package: **efreeti/json-schema-types**. Versions are maintained in
-`wally.toml` and `package.json`.
+npm package: **@efreeti/luau-json-schema-types**. `package.json` is the source of
+package metadata, version, and publication file selection.
 
-## Install with Wally
+## Install with npm
 
-Add this dependency to your game's `wally.toml` using a published version:
-
-```toml
-[dependencies]
-JsonSchemaTypes = "efreeti/json-schema-types@1.0.0"
-```
-
-Run `wally install`. Mount `Packages/` in your Rojo project as usual. Wally's
-wrapper modules do not automatically forward exported type aliases; after installing,
-run [wally-package-types](https://github.com/JohnnyMorganz/wally-package-types):
+After the first npm publication:
 
 ```sh
-rojo sourcemap default.project.json --output sourcemap.json
-wally-package-types --sourcemap sourcemap.json Packages/
+npm install @efreeti/luau-json-schema-types@1.1.0
+```
+
+For consumers using filesystem aliases, install our pinned npmluau fork, run it
+following installation, and map `pkg` to `./node_modules/.luau-aliases` in `.luaurc`.
+The fork automatically forwards exported types, including generic defaults.
+See [publishing and consumer setup](docs/publishing.md) for the exact configuration.
+
+```luau
+--!strict
+local Schema = require("@pkg/@efreeti/luau-json-schema-types")
+local schema: Schema.TextJSONSchema = { type = "string", format = "email" }
 ```
 
 ## Use in Roblox
 
+These examples use source imports. A consuming game uses darklua to convert
+filesystem aliases to imports matching its Rojo layout before syncing to Studio.
+The library does not publish a Rojo project file.
+
 ```luau
 --!strict
 local HttpService = game:GetService("HttpService")
-local Schema = require(game.ReplicatedStorage.Packages.JsonSchemaTypes)
+local Schema = require("@pkg/@efreeti/luau-json-schema-types")
 
 local schema: Schema.JSONSchema = {
     type = "object",
@@ -98,13 +103,23 @@ provides no runtime validation.
 ## Develop
 
 Requires Python 3.11+ and Luau **0.741 or newer**, including its read-only type syntax.
-Install the pinned tools (curl/unzip, and CMake on Intel Macs):
+Install Node.js 24 and a compatible Rust toolchain for building the pinned fork.
+Rust 1.94.0 was tested; it can be installed without changing the default:
 
 ```sh
+rustup toolchain install 1.94.0 --profile minimal --target wasm32-unknown-unknown
+RUSTUP_TOOLCHAIN=1.94.0 npm ci
 bash scripts/install-tools.sh
-python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
-python3 scripts/check-package.py .tools/wally
+npm run check
+npm run check:package
 ```
+
+`npm ci` installs dependencies and runs npmluau. There is no Wally installation,
+library sourcemap, or copied CLI source workspace. In IntelliJ use the Luau plugin's
+Standard platform mode without a sourcemap. Its LuauSolverV2 flag must be enabled
+on older language-server versions. If installed Luau sources are excluded from
+navigation, cancel that exclusion and mark their directory as a Sources Root;
+`.luaurc` resolves aliases but does not register IntelliJ source roots.
 
 Tests statically check all 19 synthetic schemas in
 `tests/fixtures/cases/`, translated into native Luau values, plus construction examples
@@ -120,5 +135,10 @@ to include them in a local run. Public CI uses only the synthetic cases.
 The check script generates `tests/FixtureData.luau` automatically before checking
 the types. That generated module is ignored by Git and does not need to be committed.
 
-See [publishing instructions](docs/publishing.md) for Wally and optional npm distribution.
+`npm run build` creates ignored `build/package/`, containing only publication
+files. The builder uses npm's `files` selection, flattens the configured source
+directory, and generates a root `init.luau` entry. Its generated `package.json`
+omits build settings, development dependencies, and lifecycle scripts.
+
+See [publishing instructions](docs/publishing.md) for npm distribution.
 Apache-2.0 licensed; upstream MIT attribution is retained in [NOTICE](NOTICE).

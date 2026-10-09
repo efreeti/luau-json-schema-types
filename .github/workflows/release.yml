@@ -1,4 +1,4 @@
-name: Release to Wally
+name: Release to npm
 run-name: Release ${{ inputs.release_version }} and prepare ${{ inputs.next_version }}
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: wally-release
+  group: npm-release
   cancel-in-progress: false
 defaults:
   run:
@@ -38,6 +38,16 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install Rust for npmluau
+        run: rustup toolchain install 1.94.0 --profile minimal --target wasm32-unknown-unknown
+      - name: Install npm dependencies
+        env:
+          RUSTUP_TOOLCHAIN: '1.94.0'
+        run: npm ci
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -48,42 +58,39 @@ jobs:
             echo "Tag v$RELEASE_VERSION already exists. Check the previous release before retrying." >&2
             exit 1
           fi
-      - name: Require Wally authentication
+      - name: Require npm authentication
         env:
-          WALLY_AUTH_TOKEN: ${{ secrets.WALLY_AUTH_TOKEN }}
-        run: test -n "$WALLY_AUTH_TOKEN"
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: test -n "$NODE_AUTH_TOKEN"
       - run: bash scripts/install-tools.sh
       - name: Set release version
         run: python3 scripts/version.py set "$RELEASE_VERSION" --update-readme
       - name: Verify release
         run: |
           python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
-          python3 scripts/check-package.py .tools/wally
+          python3 scripts/check-package.py --luau .tools/luau --analyzer .tools/luau-analyze
       - name: Commit and tag release
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add wally.toml package.json README.md
+          git add package.json package-lock.json README.md
           git commit --allow-empty -m "Release $RELEASE_VERSION"
           git tag -a "v$RELEASE_VERSION" -m "Release $RELEASE_VERSION"
           git push --atomic origin HEAD:refs/heads/main "refs/tags/v$RELEASE_VERSION"
-      - name: Publish release to Wally
+      - name: Publish release to npm
         env:
-          WALLY_AUTH_TOKEN: ${{ secrets.WALLY_AUTH_TOKEN }}
-        run: |
-          .tools/wally login --token "$WALLY_AUTH_TOKEN"
-          .tools/wally publish | tee "$RUNNER_TEMP/wally-publish.log"
-          grep -Fq 'Package published successfully!' "$RUNNER_TEMP/wally-publish.log"
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish ./build/package --access public
       - name: Set and commit next development version
         run: |
           python3 scripts/version.py set "$NEXT_VERSION"
-          git add wally.toml package.json
+          git add package.json package-lock.json
           git commit -m "Prepare development version $NEXT_VERSION"
           git push origin HEAD:refs/heads/main
       - name: Release summary
         run: |
           {
-            echo "Published efreeti/json-schema-types@$RELEASE_VERSION."
+            echo "Published @efreeti/luau-json-schema-types@$RELEASE_VERSION."
             echo "Release tag: v$RELEASE_VERSION."
             echo "main now uses $NEXT_VERSION."
           } >> "$GITHUB_STEP_SUMMARY"

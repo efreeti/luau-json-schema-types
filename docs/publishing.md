@@ -1,98 +1,96 @@
-# Publishing
+# npm setup and publication
 
-## Wally (recommended)
+The npm package is `@efreeti/luau-json-schema-types`. Confirm you control the npm
+`efreeti` scope; GitHub/Wally ownership does not establish npm ownership.
+The old Wally release remains available, but new development and releases use npm.
+No npm publication has been performed by this migration.
 
-Package: `efreeti/json-schema-types`. Wally scopes are tied to GitHub users or
-organizations; domain verification and GPG signing are not part of this workflow.
-The publishing identity must have access to the `efreeti` scope.
+## Dependency setup
 
-For a local release:
+Both libraries pin `efreeti/npmluau` to commit
+`6f8c35d86ed4dd0e22cd76b4d515bc19aa8f1164`. The fork fixes Luau CLI module paths
+and exported generic defaults. Installing it from Git builds its WebAssembly
+module, so Node.js 24 and a compatible Rust toolchain are needed:
 
 ```sh
-wally login
-python3 scripts/check.py --luau .tools/luau --analyzer .tools/luau-analyze
-python3 scripts/check-package.py wally
-wally publish
+rustup toolchain install 1.94.0 --profile minimal --target wasm32-unknown-unknown
+RUSTUP_TOOLCHAIN=1.94.0 npm ci
 ```
 
-Follow the authentication instructions shown by `wally login`. Inspect
-`wally package --list` before publishing; the archive contains only the source,
-Rojo entry point, Wally manifest, README, LICENSE and NOTICE.
+A consuming project's configuration can use:
 
-### GitHub Actions
+```json
+{
+  "devDependencies": {
+    "npmluau": "git+https://github.com/efreeti/npmluau.git#6f8c35d86ed4dd0e22cd76b4d515bc19aa8f1164"
+  },
+  "scripts": {
+    "prepare": "npmluau --keep-luaurc --keep-rojo-configs"
+  }
+}
+```
 
-The **Release to Wally** Action works like Maven release preparation and publication.
-Push this workflow to `main` before using it.
+And `.luaurc`:
 
-One-time setup:
+```json
+{
+  "aliases": { "pkg": "./node_modules/.luau-aliases" }
+}
+```
 
-1. Run `wally login` and complete GitHub authorization. Wally 0.3.2 stores the
-   login token under `[tokens]` in `~/.wally/auth.toml`.
-2. Create the GitHub environment **release** and add **WALLY_AUTH_TOKEN** as an
-   environment secret containing that token. Do not commit the token or paste it
-   into a chat.
-3. The workflow requests `contents: write` for GitHub's built-in `GITHUB_TOKEN`.
-   Repository rules must allow the Action to push commits to `main` and create
-   release tags. If branch protection rejects those pushes, adjust the repository's
-   release-bot permissions before running the workflow.
+Imports use `require("@pkg/@efreeti/luau-json-schema-types")`. Dependencies contain
+real installed files; no custom copied CLI workspace or library sourcemap is
+needed. Generated links forward exported types. Conflicting nested dependency
+versions are not independently resolved by the tool's shared aliases.
+These are Luau packages, not JavaScript modules or TypeScript declarations.
 
-To release, open **Actions → Release to Wally → Run workflow**, select **main**,
-and fill in:
-
-- **release_version**: the version to publish, such as `1.0.0`.
-- **next_version**: the version to leave on `main`, such as `1.0.1-dev.0`.
-
-Both values are required. Release versions must be stable SemVer (`X.Y.Z`). The
-next version can be stable or a prerelease, including `1.0.1-SNAPSHOT`; its numeric
-version must be greater than the release. No versions are inferred automatically.
-
-The Action:
-
-1. Validates the versions, requires a new release tag, and checks authentication.
-2. Sets the release version in both manifests and the README installation example.
-3. Runs schema type checks and verifies the Wally archive using public synthetic cases.
-4. Commits the release and creates an annotated `v<release_version>` tag. It pushes
-   the release commit and tag together atomically.
-5. Logs in to Wally and publishes that release, verifying the success message.
-6. Sets both manifests to the next development version, commits and pushes it.
-   The README keeps the published installation version.
-
-The workflow is manual only; pushing tags does not trigger another publication.
-GitHub's built-in token does not trigger the normal push CI workflow for these
-commits, so this release workflow performs its own checks before publishing.
-It publishes only to Wally, not npm. No GPG key or Central credentials are needed.
-
-Publication and Git pushes cannot be one atomic operation. If Wally publication
-fails after tagging, the release commit/tag remain and the development bump is not
-performed. Inspect the logs and registry before retrying. If the version was not
-published, check out the release tag and publish that exact version manually after
-fixing authentication, then commit the planned development version on `main`.
-If publication succeeded but the final push failed, only the next-version commit
-needs recovery; do not publish the same version again. The workflow rejects an
-existing release tag to prevent accidental reruns of a partially completed release.
-It never force-pushes; concurrent branch changes cause a push failure.
-
-Consumers use `wally install` and, for exported type aliases, `wally-package-types`
-as described in the README. That type-forwarding step is required because Wally's
-ordinary wrapper only forwards the runtime module.
-
-## npm (optional)
-
-`package.json` is ready to package the same raw Luau files as
-`@efreeti/luau-json-schema-types`. Confirm you control the npm `efreeti` scope;
-GitHub/Wally scope ownership does not create an npm scope automatically.
+## Build and inspect
 
 ```sh
-npm pack --dry-run
+npm run build
+npm run check:package
+(cd build/package && npm pack --dry-run)
+```
+
+Root `package.json` maintains metadata, `files`, and custom `luau.build` source /
+output settings. npm performs file selection; the builder flattens selected `src`
+files and rejects collisions. `build/package/` contains only `init.luau`,
+`types.luau`, `package.json`, `README.md`, `LICENSE`, and `NOTICE`.
+Generated metadata uses `main = init.luau` and removes build settings, scripts,
+and development dependencies. Archives and smoke tests remain outside it.
+No `default.project.json` is needed: a root init file is the module boundary.
+For a Roblox game, use darklua and the game's Rojo configuration to convert
+source imports into the desired instance layout. npm itself does not rewrite
+imports or configure Roblox services.
+
+## Release
+
+The manual **Release to npm** GitHub Action takes `release_version` and
+`next_version`, as the previous release workflow did. It sets and verifies the
+release version, builds the artifact, commits and pushes the release/tag, publishes
+`build/package/`, then commits and pushes the next development version.
+
+Before using it:
+
+1. Push this migration in both repositories.
+2. Establish access to the npm `efreeti` scope.
+3. In the GitHub environment `release`, add `NPM_TOKEN`: an npm granular token
+   with permission to publish this package and bypass 2FA for automated publication.
+   See [npm CI authentication](https://docs.npmjs.com/private-modules/ci-server-config/).
+4. Allow the workflow's GitHub token to push release commits and tags.
+
+Local publication after checking a stable version:
+
+```sh
 npm login
-npm publish --access public
+npm run check
+npm run check:package
+(cd build/package && npm publish --access public)
 ```
 
-This is file distribution, not a JavaScript module. Node cannot execute this Luau
-package. A consumer can mount `node_modules/@efreeti/luau-json-schema-types/src`
-into a Rojo project and require that ModuleScript. The supplied Actions workflow
-publishes only to Wally; npm publication is optional and manual.
-
-References: [Wally CLI and manifest](https://github.com/UpliftGames/wally),
-[Wally policies](https://wally.run/policies/),
-[wally-package-types](https://github.com/JohnnyMorganz/wally-package-types).
+An already published npm version cannot be replaced. Existing Git tags also
+remain; choose a new release version/tag. Publishing and Git pushes are not
+atomic: if publishing fails after tagging, inspect npm before retrying. If the
+version is absent, rebuild from the release tag and publish that directory. If it
+is present, recover only the next development commit.
+The workflow publishes nothing until manually invoked with credentials.
