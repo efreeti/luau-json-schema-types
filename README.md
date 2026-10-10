@@ -6,8 +6,7 @@ Schemas use ordinary Luau tables and values suitable for Roblox's `HttpService:J
 The package contains type declarations only. Requiring it returns an empty table;
 its exported type aliases provide static checks when constructing schemas.
 
-npm package: **@efreeti/luau-json-schema-types**. `package.json` is the source of
-package metadata, version, and publication file selection.
+npm package: **@efreeti/luau-json-schema-types**.
 
 ## Install with npm
 
@@ -20,7 +19,34 @@ npm install @efreeti/luau-json-schema-types@1.1.0
 For consumers using filesystem aliases, install our pinned npmluau fork, run it
 following installation, and map `pkg` to `./node_modules/.luau-aliases` in `.luaurc`.
 The fork automatically forwards exported types, including generic defaults.
-See [publishing and consumer setup](docs/publishing.md) for the exact configuration.
+Add the following to your project's `package.json`:
+
+```json
+{
+  "devDependencies": {
+    "npmluau": "git+https://github.com/efreeti/npmluau.git#6f8c35d86ed4dd0e22cd76b4d515bc19aa8f1164"
+  },
+  "scripts": {
+    "prepare": "npmluau --keep-luaurc --keep-rojo-configs"
+  }
+}
+```
+
+The Git-installed tool builds its WebAssembly generator and needs Node.js 24 and
+Rust (tested with 1.94.0). Install dependencies with
+`RUSTUP_TOOLCHAIN=1.94.0 npm install` after installing that toolchain.
+
+Configure `.luaurc`:
+
+```json
+{
+  "aliases": { "pkg": "./node_modules/.luau-aliases" }
+}
+```
+
+The generated aliases are shared across installed packages; conflicting nested
+versions are not resolved independently. These are native Luau packages, not
+JavaScript modules or TypeScript declarations.
 
 ```luau
 --!strict
@@ -135,10 +161,4 @@ to include them in a local run. Public CI uses only the synthetic cases.
 The check script generates `tests/FixtureData.luau` automatically before checking
 the types. That generated module is ignored by Git and does not need to be committed.
 
-`npm run build` creates ignored `build/package/`, containing only publication
-files. The builder uses npm's `files` selection, flattens the configured source
-directory, and generates a root `init.luau` entry. Its generated `package.json`
-omits build settings, development dependencies, and lifecycle scripts.
-
-See [publishing instructions](docs/publishing.md) for npm distribution.
 Apache-2.0 licensed; upstream MIT attribution is retained in [NOTICE](NOTICE).
