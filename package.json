@@ -1,6 +1,6 @@
 {
   "name": "@efreeti/luau-json-schema-types",
-  "version": "1.2.0-SNAPSHOT",
+  "version": "1.2.0",
   "description": "Typed Luau JSON Schema 2020-12 models",
   "license": "Apache-2.0",
   "repository": {

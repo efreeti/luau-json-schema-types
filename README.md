@@ -13,7 +13,7 @@ npm package: **@efreeti/luau-json-schema-types**.
 After the first npm publication:
 
 ```sh
-npm install @efreeti/luau-json-schema-types@1.1.0
+npm install @efreeti/luau-json-schema-types@1.2.0
 ```
 
 For consumers using filesystem aliases, install our pinned npmluau fork, run it
